@@ -9,22 +9,24 @@ use rash\map\interfaces\MovementInterface;
 
 class MovementStrategy implements MovementInterface
 {
-    /** @var array */
-    private $matrix = [[-1, 0], [0, 1], [1, 0], [0, -1]];
     /** @var int */
     private $jumpHeight;
     /** @var int */
     private $dropHeight;
+    /** @var array */
+    private $matrix = [];
 
     /**
      * MovementStrategy constructor.
      * @param int $jumpHeight
      * @param int $dropHeight
+     * @param array $matrix
      */
-    public function __construct(int $jumpHeight = 1, int $dropHeight = 3)
+    public function __construct(int $jumpHeight = 1, int $dropHeight = 3, array $matrix = [[-1, 0], [0, 1], [1, 0], [0, -1]])
     {
         $this->jumpHeight = $jumpHeight;
         $this->dropHeight = $dropHeight;
+        $this->matrix = $matrix;
     }
 
     /**

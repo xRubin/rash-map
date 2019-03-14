@@ -97,12 +97,17 @@ class WavePathfinder implements PathfinderInterface
                             if (!MapHelper::containsCoordinates($this->map, new Coordinates2D($x + $offsetX, $y + $offsetY)))
                                 continue;
 
-                            if (is_null(@$weights[$x + $offsetX][$y + $offsetY]) && $this->isWalkable(new Coordinates2D($x + $offsetX, $y + $offsetY), new Coordinates2D($x, $y))) {
-                                $weights[$x + $offsetX][$y + $offsetY] = $step + 1;
+                            if (!is_null(@$weights[$x + $offsetX][$y + $offsetY]))
+                                continue;
 
-                                if ($from->equalTo(new Coordinates2D($x + $offsetX, $y + $offsetY)))
-                                    return $this->buildRoute($weights, $from);
-                            }
+                            if (!$this->isWalkable(new Coordinates2D($x, $y), new Coordinates2D($x + $offsetX, $y + $offsetY)))
+                                continue;
+
+                            $weights[$x + $offsetX][$y + $offsetY] = $step + 1;
+
+                            if ($from->equalTo(new Coordinates2D($x + $offsetX, $y + $offsetY)))
+                                return $this->buildRoute($weights, $from);
+
                         }
                     }
                 }
@@ -119,15 +124,16 @@ class WavePathfinder implements PathfinderInterface
      */
     private function isWalkable(Coordinates2D $from, Coordinates2D $to): bool
     {
+        foreach ($this->getObstacles() as $coordinate) {
+            if ($coordinate->equalTo($to))
+                return false;
+        }
+
         if (!$this->map->getTile($to)->isWalkable())
             return false;
 
         if ($this->map->getTile($to)->getHeight() > $this->map->getTile($from)->getHeight() + $this->getJumpHeight())
             return false;
-
-        foreach ($this->getObstacles() as $coordinate)
-            if ($coordinate->equalTo($to))
-                return false;
 
         return true;
     }
@@ -140,7 +146,7 @@ class WavePathfinder implements PathfinderInterface
     private function buildRoute(array $weights, Coordinates2D $from): RouteInterface
     {
         $route = new Route();
-        for ($i = $weights[$from->getX()][$from->getY()]; $i >=0; $i--) {
+        for ($i = $weights[$from->getX()][$from->getY()]; $i >= 0; $i--) {
             foreach (self::MOVE_MATRIX as $offsets) {
                 list($offsetX, $offsetY) = $offsets;
                 if (@$weights[$from->getX() + $offsetX][$from->getY() + $offsetY] === $i) {

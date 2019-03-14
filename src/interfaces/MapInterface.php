@@ -22,4 +22,12 @@ interface MapInterface
      * @return int
      */
     public function getLength(): int;
+
+    /**
+     * @param Coordinates2D $from
+     * @param Coordinates2D $to
+     * @param MovementInterface $critter
+     * @return bool
+     */
+    public function isWalkable(Coordinates2D $from, Coordinates2D $to, MovementInterface $critter): bool;
 }

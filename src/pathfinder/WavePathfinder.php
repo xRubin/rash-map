@@ -3,113 +3,51 @@ declare(strict_types=1);
 
 namespace rash\map\pathfinder;
 
-use rash\map\helpers\MapHelper;
-use rash\map\interfaces\MapInterface;
-use rash\map\interfaces\PathfinderInterface;
+use rash\map\interfaces\MovementInterface;
 use rash\map\interfaces\RouteInterface;
 use rash\map\pathfinder\exceptions\RouteNotFoundException;
 use rash\map\values\Coordinates2D;
 use rash\map\values\Route;
 
-class WavePathfinder implements PathfinderInterface
+class WavePathfinder extends AbstractPathfinder
 {
-    /** @var MapInterface */
-    private $map;
-    /** @var Coordinates2D[] */
-    private $obstacles = [];
-    /** @var int */
-    private $jumpHeight = 0;
-
-    private const MOVE_MATRIX = [[-1, 0], [0, 1], [1, 0], [0, -1]];
-
-    /**
-     * @param MapInterface $map
-     */
-    public function __construct(MapInterface $map)
-    {
-        $this->setMap($map);
-    }
-
-
-    /**
-     * @param MapInterface $map
-     * @return WavePathfinder
-     */
-    public function setMap(MapInterface $map): PathfinderInterface
-    {
-        $this->map = $map;
-        return $this;
-    }
-
-    /**
-     * @return Coordinates2D[]
-     */
-    public function getObstacles(): array
-    {
-        return $this->obstacles;
-    }
-
-    /**
-     * @param Coordinates2D[] $obstacles
-     * @return WavePathfinder
-     */
-    public function setObstacles(array $obstacles): PathfinderInterface
-    {
-        $this->obstacles = $obstacles;
-        return $this;
-    }
-
-    /**
-     * @return int
-     */
-    public function getJumpHeight(): int
-    {
-        return $this->jumpHeight;
-    }
-
-    /**
-     * @param int $jumpHeight
-     * @return WavePathfinder
-     */
-    public function setJumpHeight(int $jumpHeight): PathfinderInterface
-    {
-        $this->jumpHeight = $jumpHeight;
-        return $this;
-    }
-
     /**
      * @param Coordinates2D $from
      * @param Coordinates2D $to
-     * @param int $heightJump
+     * @param MovementInterface $movement
+     * @param Coordinates2D[] $obstacles
      * @return Route
      */
-    public function findRoute2D(Coordinates2D $from, Coordinates2D $to, int $heightJump = 0): RouteInterface
+    public function findRoute2D(Coordinates2D $from, Coordinates2D $to, MovementInterface $movement, array $obstacles = []): RouteInterface
     {
+        $width = $this->getMap()->getWidth();
+        $length = $this->getMap()->getLength();
         $weights = [];
         $weights[$to->getX()][$to->getY()] = 0;
-        for ($step = 0; $step < $this->map->getWidth() * $this->map->getLength(); $step++) {
-            for ($x = 0; $x < $this->map->getWidth(); $x++) {
-                for ($y = 0; $y < $this->map->getLength(); $y++) {
-                    if (@$weights[$x][$y] === $step) {
+        for ($step = 0; $step < $width * $length; $step++) {
+            for ($x = 0; $x < $width; $x++) {
+                for ($y = 0; $y < $length; $y++) {
+                    if (@$weights[$x][$y] !== $step)
+                        continue;
 
-                        foreach (self::MOVE_MATRIX as $offsets) {
-                            list($offsetX, $offsetY) = $offsets;
-                            if (!MapHelper::containsCoordinates($this->map, new Coordinates2D($x + $offsetX, $y + $offsetY)))
-                                continue;
+                    foreach ($movement->getMatrix() as $offsets) {
+                        list($offsetX, $offsetY) = $offsets;
+                        if (!$this->mapContainsCoordinates(new Coordinates2D($x + $offsetX, $y + $offsetY)))
+                            continue;
 
-                            if (!is_null(@$weights[$x + $offsetX][$y + $offsetY]))
-                                continue;
+                        if (!is_null(@$weights[$x + $offsetX][$y + $offsetY]))
+                            continue;
 
-                            if (!$this->isWalkable(new Coordinates2D($x, $y), new Coordinates2D($x + $offsetX, $y + $offsetY)))
-                                continue;
+                        if (!$this->isWalkable(new Coordinates2D($x, $y), new Coordinates2D($x + $offsetX, $y + $offsetY), $movement, $obstacles))
+                            continue;
 
-                            $weights[$x + $offsetX][$y + $offsetY] = $step + 1;
+                        $weights[$x + $offsetX][$y + $offsetY] = $step + 1;
 
-                            if ($from->equalTo(new Coordinates2D($x + $offsetX, $y + $offsetY)))
-                                return $this->buildRoute($weights, $from);
+                        if ($from->equalTo(new Coordinates2D($x + $offsetX, $y + $offsetY)))
+                            return $this->buildRoute($weights, $from, $movement);
 
-                        }
                     }
+
                 }
             }
         }
@@ -120,20 +58,19 @@ class WavePathfinder implements PathfinderInterface
     /**
      * @param Coordinates2D $from
      * @param Coordinates2D $to
+     * @param MovementInterface $movement
+     * @param Coordinates2D[] $obstacles
      * @return bool
      */
-    private function isWalkable(Coordinates2D $from, Coordinates2D $to): bool
+    protected function isWalkable(Coordinates2D $from, Coordinates2D $to, MovementInterface $movement, array $obstacles = []): bool
     {
-        foreach ($this->getObstacles() as $coordinate) {
+        if (!parent::isWalkable($from, $to, $movement))
+            return false;
+
+        foreach ($obstacles as $coordinate) {
             if ($coordinate->equalTo($to))
                 return false;
         }
-
-        if (!$this->map->getTile($to)->isWalkable())
-            return false;
-
-        if ($this->map->getTile($to)->getHeight() > $this->map->getTile($from)->getHeight() + $this->getJumpHeight())
-            return false;
 
         return true;
     }
@@ -141,13 +78,14 @@ class WavePathfinder implements PathfinderInterface
     /**
      * @param array $weights
      * @param Coordinates2D $from
+     * @param MovementInterface $movement
      * @return Route
      */
-    private function buildRoute(array $weights, Coordinates2D $from): RouteInterface
+    private function buildRoute(array $weights, Coordinates2D $from, MovementInterface $movement): RouteInterface
     {
         $route = new Route();
         for ($i = $weights[$from->getX()][$from->getY()]; $i >= 0; $i--) {
-            foreach (self::MOVE_MATRIX as $offsets) {
+            foreach ($movement->getMatrix() as $offsets) {
                 list($offsetX, $offsetY) = $offsets;
                 if (@$weights[$from->getX() + $offsetX][$from->getY() + $offsetY] === $i) {
                     $route->push($from);

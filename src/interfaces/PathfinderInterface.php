@@ -5,33 +5,21 @@ namespace rash\map\interfaces;
 
 use rash\map\pathfinder\exceptions\PathfinderException;
 use rash\map\values\Coordinates2D;
-use rash\map\values\Route;
 
 interface PathfinderInterface
 {
     /**
-     * @param MapInterface $map
-     * @return PathfinderInterface
+     * @return MapInterface
      */
-    public function setMap(MapInterface $map): PathfinderInterface;
-
-    /**
-     * @param Coordinates2D[] $obstacles
-     * @return PathfinderInterface
-     */
-    public function setObstacles(array $obstacles): PathfinderInterface;
-
-    /**
-     * @param int $jumpHeight
-     * @return PathfinderInterface
-     */
-    public function setJumpHeight(int $jumpHeight): PathfinderInterface;
+    public function getMap(): MapInterface;
 
     /**
      * @param Coordinates2D $from
      * @param Coordinates2D $to
+     * @param MovementInterface
+     * @param Coordinates2D[] $obstacles
      * @return RouteInterface
      * @throws PathfinderException
      */
-    public function findRoute2D(Coordinates2D $from, Coordinates2D $to): RouteInterface;
+    public function findRoute2D(Coordinates2D $from, Coordinates2D $to, MovementInterface $critter, array $obstacles = []): RouteInterface;
 }

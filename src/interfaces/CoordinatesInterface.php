@@ -10,4 +10,14 @@ interface CoordinatesInterface
      * @return bool
      */
     public function equalTo(CoordinatesInterface $coordinates): bool;
+
+    /**
+     * @return int
+     */
+    public function getX(): int;
+
+    /**
+     * @return int
+     */
+    public function getY(): int;
 }

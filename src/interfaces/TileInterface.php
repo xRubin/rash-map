@@ -11,9 +11,10 @@ interface TileInterface
     public function getHeight(): int;
 
     /**
+     * @param MovementInterface $critter
      * @return bool
      */
-    public function isWalkable(): bool;
+    public function isWalkable(MovementInterface $critter): bool;
 
     /**
      * @return SpriteInterface

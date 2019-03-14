@@ -11,6 +11,11 @@ interface TileInterface
     public function getHeight(): int;
 
     /**
+     * @return bool
+     */
+    public function isWalkable(): bool;
+
+    /**
      * @return SpriteInterface
      */
     public function getSprite(): SpriteInterface;

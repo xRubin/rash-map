@@ -1,12 +1,9 @@
 <?php
 declare(strict_types=1);
 
-use \rash\map\values\Coordinates2D;
-use \rash\map\helpers\MapHelper;
+use rash\map\values\Coordinates2D;
+use rash\map\helpers\MapHelper;
 
-/**
- * Tests for Collection
- */
 class DistanceTest extends \PHPUnit\Framework\TestCase
 {
     public function testDistance2D(): void

@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace rash\map\values;
 
-class Coordinates2D implements \JsonSerializable
+use rash\map\interfaces\CoordinatesInterface;
+
+class Coordinates2D implements CoordinatesInterface, \JsonSerializable
 {
     /** @var int */
     private $x;
@@ -35,6 +37,17 @@ class Coordinates2D implements \JsonSerializable
     public function getY(): int
     {
         return $this->y;
+    }
+
+    /**
+     * @param CoordinatesInterface $coordinates
+     * @return bool
+     */
+    public function equalTo(CoordinatesInterface $coordinates): bool
+    {
+        return ($this->getX() === $coordinates->getX())
+            && ($this->getY() === $coordinates->getY())
+            ;
     }
 
     /**

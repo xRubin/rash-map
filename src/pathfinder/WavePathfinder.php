@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace rash\map\pathfinder;
 
+use rash\map\helpers\BoundaryHelper;
+use rash\map\interfaces\CoordinatesInterface;
 use rash\map\interfaces\MovementInterface;
 use rash\map\interfaces\RouteInterface;
 use rash\map\pathfinder\exceptions\RouteNotFoundException;
@@ -12,14 +14,20 @@ use rash\map\values\Route;
 class WavePathfinder extends AbstractPathfinder
 {
     /**
-     * @param Coordinates2D $from
-     * @param Coordinates2D $to
+     * @param CoordinatesInterface $from
+     * @param CoordinatesInterface $to
      * @param MovementInterface $movement
-     * @param Coordinates2D[] $obstacles
+     * @param CoordinatesInterface[] $obstacles
      * @return Route
      */
-    public function findRoute2D(Coordinates2D $from, Coordinates2D $to, MovementInterface $movement, array $obstacles = []): RouteInterface
+    public function findRoute2D(CoordinatesInterface $from, CoordinatesInterface $to, MovementInterface $movement, array $obstacles = []): RouteInterface
     {
+        if (!BoundaryHelper::mapContainsCoordinates($this->getMap(), $from))
+            throw new RouteNotFoundException();
+
+        if (!BoundaryHelper::mapContainsCoordinates($this->getMap(), $to))
+            throw new RouteNotFoundException();
+
         $width = $this->getMap()->getWidth();
         $length = $this->getMap()->getLength();
         $weights = [];
@@ -32,7 +40,7 @@ class WavePathfinder extends AbstractPathfinder
 
                     foreach ($movement->getMatrix() as $offsets) {
                         list($offsetX, $offsetY) = $offsets;
-                        if (!$this->mapContainsCoordinates(new Coordinates2D($x + $offsetX, $y + $offsetY)))
+                        if (!BoundaryHelper::mapContainsCoordinates($this->getMap(), new Coordinates2D($x + $offsetX, $y + $offsetY)))
                             continue;
 
                         if (!is_null(@$weights[$x + $offsetX][$y + $offsetY]))
@@ -56,15 +64,15 @@ class WavePathfinder extends AbstractPathfinder
     }
 
     /**
-     * @param Coordinates2D $from
-     * @param Coordinates2D $to
+     * @param CoordinatesInterface $from
+     * @param CoordinatesInterface $to
      * @param MovementInterface $movement
-     * @param Coordinates2D[] $obstacles
+     * @param CoordinatesInterface[] $obstacles
      * @return bool
      */
-    protected function isWalkable(Coordinates2D $from, Coordinates2D $to, MovementInterface $movement, array $obstacles = []): bool
+    protected function isWalkable(CoordinatesInterface $from, CoordinatesInterface $to, MovementInterface $movement, array $obstacles = []): bool
     {
-        if (!parent::isWalkable($from, $to, $movement))
+        if (!$movement->canWalk($this->getMap(), $from, $to))
             return false;
 
         foreach ($obstacles as $coordinate) {
@@ -77,11 +85,11 @@ class WavePathfinder extends AbstractPathfinder
 
     /**
      * @param array $weights
-     * @param Coordinates2D $from
+     * @param CoordinatesInterface $from
      * @param MovementInterface $movement
      * @return Route
      */
-    private function buildRoute(array $weights, Coordinates2D $from, MovementInterface $movement): RouteInterface
+    private function buildRoute(array $weights, CoordinatesInterface $from, MovementInterface $movement): RouteInterface
     {
         $route = new Route();
         for ($i = $weights[$from->getX()][$from->getY()]; $i >= 0; $i--) {

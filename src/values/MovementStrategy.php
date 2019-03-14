@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace rash\map\values;
 
+use rash\map\interfaces\CoordinatesInterface;
+use rash\map\interfaces\MapInterface;
 use rash\map\interfaces\MovementInterface;
 
 class MovementStrategy implements MovementInterface
@@ -47,5 +49,28 @@ class MovementStrategy implements MovementInterface
     public function getDropHeight(): int
     {
         return $this->dropHeight;
+    }
+
+    /**
+     * @param MapInterface $map
+     * @param CoordinatesInterface $from
+     * @param CoordinatesInterface $to
+     * @return bool
+     */
+    public function canWalk(MapInterface $map, CoordinatesInterface $from, CoordinatesInterface $to): bool
+    {
+        if (is_null($map->getTile($to)))
+            return false;
+
+        if (!$map->getTile($to)->isWalkable($this))
+            return false;
+
+        if ($map->getTile($to)->getHeight() > $map->getTile($from)->getHeight() + $this->getJumpHeight())
+            return false;
+
+        if ($map->getTile($to)->getHeight() < $map->getTile($from)->getHeight() - $this->getDropHeight())
+            return false;
+
+        return true;
     }
 }

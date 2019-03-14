@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace rash\map\interfaces;
 
 use rash\map\pathfinder\exceptions\PathfinderException;
-use rash\map\values\Coordinates2D;
 
 interface PathfinderInterface
 {
@@ -14,12 +13,12 @@ interface PathfinderInterface
     public function getMap(): MapInterface;
 
     /**
-     * @param Coordinates2D $from
-     * @param Coordinates2D $to
+     * @param CoordinatesInterface $from
+     * @param CoordinatesInterface $to
      * @param MovementInterface
-     * @param Coordinates2D[] $obstacles
+     * @param CoordinatesInterface[] $obstacles
      * @return RouteInterface
      * @throws PathfinderException
      */
-    public function findRoute2D(Coordinates2D $from, Coordinates2D $to, MovementInterface $critter, array $obstacles = []): RouteInterface;
+    public function findRoute2D(CoordinatesInterface $from, CoordinatesInterface $to, MovementInterface $critter, array $obstacles = []): RouteInterface;
 }

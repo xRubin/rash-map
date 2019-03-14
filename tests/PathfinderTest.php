@@ -7,12 +7,13 @@ use rash\map\interfaces\TileInterface;
 use rash\map\pathfinder\WavePathfinder;
 use rash\map\values\Route;
 use rash\map\values\MovementStrategy;
+use rash\map\pathfinder\exceptions\RouteNotFoundException;
 
 class PathfinderTest extends \PHPUnit\Framework\TestCase
 {
     public function testWavePathfinderFlat(): void
     {
-        $pathfinder = new WavePathfinder($this->getFlatMap());
+        $pathfinder = new WavePathfinder($this->getFlatMap(8, 8));
 
         $route = $pathfinder->findRoute2D(
             new Coordinates2D(3,3),
@@ -34,7 +35,7 @@ class PathfinderTest extends \PHPUnit\Framework\TestCase
 
     public function testWavePathfinderFlatWithObstacles(): void
     {
-        $pathfinder = new WavePathfinder($this->getFlatMap());
+        $pathfinder = new WavePathfinder($this->getFlatMap(8, 8));
 
         $route = $pathfinder->findRoute2D(
             new Coordinates2D(3,3),
@@ -60,7 +61,19 @@ class PathfinderTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    protected function getFlatMap(): MapInterface
+    public function testWavePathfinderRouteNotFound(): void
+    {
+        $pathfinder = new WavePathfinder($this->getFlatMap(8, 8));
+
+        $this->expectException(RouteNotFoundException::class);
+        $route = $pathfinder->findRoute2D(
+            new Coordinates2D(3,3),
+            new Coordinates2D(4,17),
+            new MovementStrategy()
+        );
+    }
+
+    protected function getFlatMap(int $width, int $length): MapInterface
     {
         $flatTile = $this->createMock(TileInterface::class);
 
@@ -75,10 +88,10 @@ class PathfinderTest extends \PHPUnit\Framework\TestCase
         $map = $this->createMock(MapInterface::class);
 
         $map->method('getWidth')
-            ->willReturn(8);
+            ->willReturn($width);
 
         $map->method('getLength')
-            ->willReturn(8);
+            ->willReturn($length);
 
         $map->method('getTile')
             ->willReturn($flatTile);
